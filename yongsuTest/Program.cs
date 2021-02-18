@@ -3,6 +3,8 @@ using ESCPOS_NET.Emitters;
 using ESCPOS_NET.Utilities;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 namespace yongsuTest
@@ -87,14 +89,96 @@ namespace yongsuTest
 
         static void Main(string[] args)
         {
-            printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
+            //printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
             // Json 다루는건 https://lovemewithoutall.github.io/it/json-dot-net/ 참고
-            JObject json = JObject.Parse(testJson);
-            PrintTest();
+            //PrintTest();
+            // TcpServerTest();
+
+            JObject mockup = JObject.Parse(testJson);
+            foreach (var menu in mockup["menus"])
+            {
+                string menu_pojang = menu["isTakeOut"].Value<bool>() ? "포장" : "테이블";
+                string menu_name = menu["name"].ToString();
+                string menu_tumbler = menu["isTumbler"].Value<bool>() ? "텀블러" : null;
+                string menu_temp = menu["temp"].ToString(); // 아이스, 핫
+
+                Console.WriteLine("({0}) {1} ({2})", menu_temp, menu_name, menu_pojang);
+
+                if (menu_tumbler != null)
+                {
+                    Console.WriteLine("    {0}", menu_tumbler);
+                }
+
+                JArray optionsArray = menu["options"].ToObject<JArray>();
+                foreach (var option in optionsArray)
+                {
+                    string _option = String.Format("    {0}: {1}", option["name"].ToString(), option["quantity"].ToString());
+                    Console.WriteLine(_option);
+                }
+            }
+        }
+
+        static void TcpServerTest()
+        {
+            string bindIp = "127.0.0.1";
+            const int bindPort = 9292;
+            TcpListener server = null;
+            try
+            {
+                IPEndPoint localAddress = new IPEndPoint(IPAddress.Parse(bindIp), bindPort);
+
+                server = new TcpListener(localAddress);
+
+                server.Start();
+
+                Console.WriteLine("프린터 서버 시작...");
+
+                while (true)
+                {
+                    TcpClient client = server.AcceptTcpClient();
+                    Console.WriteLine("클라이언트 접속: {0} ", ((IPEndPoint)client.Client.RemoteEndPoint).ToString());
+
+                    NetworkStream stream = client.GetStream();
+
+                    int length;
+                    string data = null;
+                    byte[] bytes = new byte[10000];
+
+                    while ((length = stream.Read(bytes, 0, bytes.Length)) != 0)
+                    {
+                        data = Encoding.Default.GetString(bytes, 0, length);
+                        Console.WriteLine(String.Format("수신: {0}", data));
+                        JObject json = JObject.Parse(data);
+                        CreateParams(json);
+                        // byte[] msg = Encoding.Default.GetBytes(data);
+                        // stream.Write(msg, 0, msg.Length);
+                        // Console.WriteLine(String.Format("송신: {0}", data));
+                    }
+
+                    stream.Close();
+                    client.Close();
+                }
+
+            }
+            catch (SocketException e)
+            {
+                Console.WriteLine(e);
+            }
+            finally
+            {
+                server.Stop();
+            }
+
+            Console.WriteLine("서버를 종료합니다.");
+        }
+
+        static void CreateParams(JObject json)
+        {
+            
         }
 
         // 파라미터 필요
-        static void PrintTest()
+        static void PrintTest(string orderNumber, string menuList, string optionsList)
         {
             var e = new CustomEpson();
             printer.Write(
