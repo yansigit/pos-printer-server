@@ -4,9 +4,14 @@ using ESCPOS_NET.Utilities;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Text;
+using System.Net;
+using System.Diagnostics;
+using System.Net.Sockets;
+
 
 namespace yongsuTest
 {
+    
     class Program
     {
         static SerialPrinter printer;
@@ -84,18 +89,63 @@ namespace yongsuTest
     }}
   ]
 }}";
-
         static void Main(string[] args)
         {
+            string data = null;
+
+            /*//소켓*/
+            const int bindPort = 9191;
+            TcpListener server = null;
             printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
-            // Json 다루는건 https://lovemewithoutall.github.io/it/json-dot-net/ 참고
-            JObject json = JObject.Parse(testJson);
-            PrintTest();
+            //포트는 9191로 통일
+            try
+            {
+                IPEndPoint localAddress = new IPEndPoint(IPAddress.Parse("192.168.0.15"), bindPort);
+                server = new TcpListener(localAddress);
+                server.Start();
+                Console.WriteLine("Printer Server Started");
+
+                while (true)
+                {
+                    TcpClient client = server.AcceptTcpClient();
+                    Console.WriteLine("연결된 클라이언트 : ", ((IPEndPoint)client.Client.RemoteEndPoint).ToString());
+                    NetworkStream stream = client.GetStream();
+
+                    int length;
+                    
+                    byte[] bytes = new byte[1000];
+
+                    while((length = stream.Read(bytes, 0, bytes.Length)) != 0)
+                    {
+                        data = Encoding.Default.GetString(bytes, 0, length);
+                        Console.WriteLine("수신됨 : ", data);
+                    }
+                    // Json 다루는건 https://lovemewithoutall.github.io/it/json-dot-net/ 참고
+                    //JObject json = JObject.Parse(testJson);
+                    JObject json = null;
+                    if (data != null)
+                    {
+                        json = JObject.Parse(data);
+                        PrintTest(json);
+                    }
+                    //프린터 하고 내용 초기화.
+                    data = null; json = null;
+                }
+            }
+            catch(SocketException e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         // 파라미터 필요
-        static void PrintTest()
-        {
+        static void PrintTest(JObject data)
+        {   
+            //필요 인수
+            int orderNum;
+            
+
+
             var e = new CustomEpson();
             printer.Write(
               ByteSplicer.Combine(
