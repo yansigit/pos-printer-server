@@ -9,7 +9,80 @@ namespace yongsuTest
     class Program
     {
         static SerialPrinter printer;
-        static String testJson = $@"";
+        static String testJson = $@"{{
+  ""totalPrice"": 10800,
+  ""menus"": [
+    {{
+      ""isTakeOut"": true,
+      ""isTumbler"": false,
+      ""name"": ""헤어즐넛라떼"",
+      ""options"": [
+        {{
+          ""name"": ""샷 추가"",
+          ""price"": 500,
+          ""quantity"": 1
+        }},
+        {{
+          ""name"": ""설탕시럽"",
+          ""price"": 500,
+          ""quantity"": 0
+        }},
+        {{
+          ""name"": ""헤이즐넛시럽"",
+          ""price"": 500,
+          ""quantity"": 1
+        }},
+        {{
+          ""name"": ""연하게"",
+          ""price"": 0,
+          ""quantity"": 0
+        }}
+      ],
+      ""price"": 3200,
+      ""temp"": ""아이스"",
+      ""totalPrice"": 4200
+    }},
+    {{
+      ""isTakeOut"": false,
+      ""isTumbler"": false,
+      ""name"": ""카페라떼"",
+      ""options"": [
+        {{
+          ""name"": ""샷 추가"",
+          ""price"": 500,
+          ""quantity"": 0
+        }},
+        {{
+          ""name"": ""설탕시럽"",
+          ""price"": 500,
+          ""quantity"": 1
+        }},
+        {{
+          ""name"": ""헤이즐넛시럽"",
+          ""price"": 500,
+          ""quantity"": 0
+        }},
+        {{
+          ""name"": ""연하게"",
+          ""price"": 0,
+          ""quantity"": 0
+        }}
+      ],
+      ""price"": 2800,
+      ""temp"": ""핫"",
+      ""totalPrice"": 3300
+    }},
+    {{
+      ""isTakeOut"": true,
+      ""isTumbler"": true,
+      ""name"": ""애플주스 스파클링"",
+      ""options"": [],
+      ""price"": 3500,
+      ""temp"": ""아이스"",
+      ""totalPrice"": 3300
+    }}
+  ]
+}}";
 
         static void Main(string[] args)
         {
@@ -51,7 +124,7 @@ namespace yongsuTest
                 e.FeedLines(1),
 
                 e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
-                e.PrintLine("ICE 아메리카노"),
+                e.PrintLine("ICE 아메리카노 (테이블)"),
                 e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth),
                 e.PrintLine("연하게"),
                 e.PrintLine("사이즈업: 1"),
@@ -60,7 +133,7 @@ namespace yongsuTest
                 e.FeedLines(10),
                 e.FullCut()
               )
-            ); ;
+            );
         }
     }
 
