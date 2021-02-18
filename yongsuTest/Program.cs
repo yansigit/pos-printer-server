@@ -1,6 +1,7 @@
 ﻿using ESCPOS_NET;
 using ESCPOS_NET.Emitters;
 using ESCPOS_NET.Utilities;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Text;
 
@@ -87,9 +88,12 @@ namespace yongsuTest
         static void Main(string[] args)
         {
             printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
+            // Json 다루는건 https://lovemewithoutall.github.io/it/json-dot-net/ 참고
+            JObject json = JObject.Parse(testJson);
             PrintTest();
         }
 
+        // 파라미터 필요
         static void PrintTest()
         {
             var e = new CustomEpson();
@@ -104,7 +108,8 @@ namespace yongsuTest
                 e.PrintLine("--------------------------"),
 
                 e.FeedLines(1),
-
+                
+                // 메뉴 및 옵션 수에 따라 Loop 돌면서 해야함
                 e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
                 e.PrintLine("HOT 에스프레소 (포장)"),
                 e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth),
@@ -130,7 +135,6 @@ namespace yongsuTest
                 e.PrintLine("사이즈업: 1"),
 
                 // e.SetStyles(PrintStyle.None),
-                e.FeedLines(10),
                 e.FullCut()
               )
             );
