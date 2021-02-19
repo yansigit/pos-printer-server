@@ -115,6 +115,7 @@ namespace yongsuTest
                 server.Start();
 
                 Console.WriteLine("프린터 서버 시작...");
+                Console.WriteLine("창을 닫지 말아주세요. 영업 종료시에만 닫으시면 됩니다.");
 
                 while (true)
                 {
