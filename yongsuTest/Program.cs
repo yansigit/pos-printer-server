@@ -88,7 +88,8 @@ namespace yongsuTest
 }}";
 
         static void Main(string[] args)
-        { 
+        {
+            Console.WriteLine("※ 창을 닫지 말아주세요. 영업 종료시에만 닫으시면 됩니다. ※");
             TcpServerTest();  
         }
 
@@ -108,12 +109,9 @@ namespace yongsuTest
                 server.Start();
 
                 Console.WriteLine("프린터 서버 시작...");
-                Console.WriteLine("창을 닫지 말아주세요. 영업 종료시에만 닫으시면 됩니다.");
 
                 while (true)
                 {
-                    
-
                     TcpClient client = server.AcceptTcpClient();
                     Console.WriteLine("클라이언트 접속: {0} ", ((IPEndPoint)client.Client.RemoteEndPoint).ToString());
 
@@ -142,8 +140,6 @@ namespace yongsuTest
                     data = null;
                     stream.Close();
                     client.Close();
-
-                    
                 }
 
             }
@@ -157,7 +153,6 @@ namespace yongsuTest
             }
 
             Console.WriteLine("서버를 종료합니다.");
-            
         }
 
         // 파라미터 필요
