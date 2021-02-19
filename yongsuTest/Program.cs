@@ -88,15 +88,8 @@ namespace yongsuTest
 }}";
 
         static void Main(string[] args)
-        {
-            
-            // Json 다루는건 https://lovemewithoutall.github.io/it/json-dot-net/ 참고
-            //PrintTest();
-            // TcpServerTest();
-            
-            //JObject mockup = JObject.Parse(testJson);
-            TcpServerTest();
-            
+        { 
+            TcpServerTest();  
         }
 
         static void TcpServerTest()
