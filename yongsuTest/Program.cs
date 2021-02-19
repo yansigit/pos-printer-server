@@ -89,39 +89,21 @@ namespace yongsuTest
 
         static void Main(string[] args)
         {
-            //printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
+            
             // Json 다루는건 https://lovemewithoutall.github.io/it/json-dot-net/ 참고
             //PrintTest();
             // TcpServerTest();
-
-            JObject mockup = JObject.Parse(testJson);
-            foreach (var menu in mockup["menus"])
-            {
-                string menu_pojang = menu["isTakeOut"].Value<bool>() ? "포장" : "테이블";
-                string menu_name = menu["name"].ToString();
-                string menu_tumbler = menu["isTumbler"].Value<bool>() ? "텀블러" : null;
-                string menu_temp = menu["temp"].ToString(); // 아이스, 핫
-
-                Console.WriteLine("({0}) {1} ({2})", menu_temp, menu_name, menu_pojang);
-
-                if (menu_tumbler != null)
-                {
-                    Console.WriteLine("    {0}", menu_tumbler);
-                }
-
-                JArray optionsArray = menu["options"].ToObject<JArray>();
-                foreach (var option in optionsArray)
-                {
-                    string _option = String.Format("    {0}: {1}", option["name"].ToString(), option["quantity"].ToString());
-                    Console.WriteLine(_option);
-                }
-            }
+            
+            //JObject mockup = JObject.Parse(testJson);
+            TcpServerTest();
+            
         }
 
         static void TcpServerTest()
         {
             string bindIp = "127.0.0.1";
             const int bindPort = 9292;
+            
             TcpListener server = null;
             try
             {
@@ -135,6 +117,9 @@ namespace yongsuTest
 
                 while (true)
                 {
+                    //프린터 연결
+                    printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
+
                     TcpClient client = server.AcceptTcpClient();
                     Console.WriteLine("클라이언트 접속: {0} ", ((IPEndPoint)client.Client.RemoteEndPoint).ToString());
 
@@ -148,15 +133,24 @@ namespace yongsuTest
                     {
                         data = Encoding.Default.GetString(bytes, 0, length);
                         Console.WriteLine(String.Format("수신: {0}", data));
-                        JObject json = JObject.Parse(data);
-                        CreateParams(json);
+                       
                         // byte[] msg = Encoding.Default.GetBytes(data);
                         // stream.Write(msg, 0, msg.Length);
                         // Console.WriteLine(String.Format("송신: {0}", data));
                     }
-
+                    JObject json = null;
+                    if(data != null)
+                    {
+                        json = JObject.Parse(data);
+                        PrintTest(json);
+                    }
+                    json = null;
+                    data = null;
                     stream.Close();
                     client.Close();
+
+                    //프린터 해제
+                    printer.Dispose();
                 }
 
             }
@@ -170,57 +164,87 @@ namespace yongsuTest
             }
 
             Console.WriteLine("서버를 종료합니다.");
-        }
-
-        static void CreateParams(JObject json)
-        {
             
         }
 
         // 파라미터 필요
-        static void PrintTest(string orderNumber, string menuList, string optionsList)
+        static void PrintTest(JObject json)
         {
+            string orderNum = json["orderNum"].ToString();
+            Console.WriteLine(orderNum);
             var e = new CustomEpson();
             printer.Write(
               ByteSplicer.Combine(
+                e.FeedLines(1),
                 e.CenterAlign(),
                 e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
-                e.PrintLine("주문번호: 1111"),
+                e.PrintLine("주문번호: " + orderNum),
                 e.SetStyles(PrintStyle.None),
                 e.PrintLine("--------------------------"),
-                e.PrintLine("2021/02/18 15:13:04"),
+                e.PrintLine(System.DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss")),//시간
                 e.PrintLine("--------------------------"),
 
-                e.FeedLines(1),
-                
-                // 메뉴 및 옵션 수에 따라 Loop 돌면서 해야함
-                e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
-                e.PrintLine("HOT 에스프레소 (포장)"),
-                e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth),
-                e.PrintLine("텀블러"),
-                e.PrintLine("샷 추가: 1"),
-                e.PrintLine("사이즈업: 1"),
+                e.FeedLines(1))
+              );
 
-                e.FeedLines(1),
+           foreach (var menu in json["menus"])
+            {
+                string menu_pojang = menu["isTakeOut"].Value<bool>() ? "포장" : "테이블";
+                string menu_name = menu["name"].ToString();
+                string menu_tumbler = menu["isTumbler"].Value<bool>() ? "텀블러" : null;
+                string menu_temp = menu["temp"].ToString(); // 아이스, 핫
 
-                e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
-                e.PrintLine("ICE 아메리카노 (테이블)"),
-                e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth),
-                e.PrintLine("텀블러"),
-                e.PrintLine("샷 추가: 1"),
-                e.PrintLine("사이즈업: 1"),
+                Console.WriteLine("({0}) {1} ({2})", menu_temp, menu_name, menu_pojang);
 
-                e.FeedLines(1),
+                if (menu_tumbler != null)
+                {
+                    Console.WriteLine("    {0}", menu_tumbler);
+                }
 
-                e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
-                e.PrintLine("ICE 아메리카노 (테이블)"),
-                e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth),
-                e.PrintLine("연하게"),
-                e.PrintLine("사이즈업: 1"),
+                printer.Write(
+                  ByteSplicer.Combine(
+                    // 메뉴 및 옵션 수에 따라 Loop 돌면서 해야함
+                    e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
+                    e.PrintLine(menu_temp + " " + menu_name + " (" + menu_pojang + ")")));
+                if (menu_tumbler != null) {
+                    printer.Write(
+                        ByteSplicer.Combine(
+                    e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth),
+                    e.PrintLine(menu_tumbler)
+                    )
+                  );
+                }
+                JArray optionsArray = menu["options"].ToObject<JArray>();
+                foreach (var option in optionsArray)
+                {
+                    string _option = String.Format("    {0}: {1}", option["name"].ToString(), option["quantity"].ToString());
+                    Console.WriteLine(_option);
+                    if (option["quantity"].ToString().Equals("0"))
+                    {
+                        continue;
+                    }
+                    printer.Write(
+                    ByteSplicer.Combine(
+                        e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth),
+                        e.PrintLine(_option)
+                    )
+                );
+                }
 
-                // e.SetStyles(PrintStyle.None),
-                e.FullCut()
-              )
+                printer.Write(
+                    ByteSplicer.Combine(
+                    e.FeedLines(1)
+                    )
+                    // e.SetStyles(PrintStyle.None),
+                    );
+            }
+            printer.Write(
+                ByteSplicer.Combine(e.FeedLines(3)));
+
+            printer.Write(
+                ByteSplicer.Combine(
+                    e.FullCut()
+                )
             );
         }
     }
