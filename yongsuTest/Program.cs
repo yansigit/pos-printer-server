@@ -12,7 +12,7 @@ namespace yongsuTest
 {
     class Program
     {
-        static SerialPrinter printer;
+        static TestSerialPrinter printer;
         static String testJson = $@"{{
   ""totalPrice"": 10800,
   ""menus"": [
@@ -120,7 +120,7 @@ namespace yongsuTest
 
                     int length;
                     string data = null;
-                    byte[] bytes = new byte[10000];
+                    byte[] bytes = new byte[15000];
 
                     while ((length = stream.Read(bytes, 0, bytes.Length)) != 0)
                     {
@@ -160,7 +160,7 @@ namespace yongsuTest
         static void PrintTest(JObject json)
         {
             //프린터 연결
-            printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
+            printer = new TestSerialPrinter(portName: "COM1", baudRate: 9600);
 
             // 옵션 없는 메뉴들 수량 체크
             Dictionary<String, int> menuWithoutOptionsCount = new Dictionary<string, int>();
@@ -194,12 +194,12 @@ namespace yongsuTest
 
                 menuWithoutOptionsSet.Add(menu_name_line);
 
-                if (menuWithoutOptionsCount.ContainsKey(menu_name))
+                if (menuWithoutOptionsCount.ContainsKey(menu_name_line))
                 {
-                    menuWithoutOptionsCount[menu_name] = menuWithoutOptionsCount[menu_name] + 1;
+                    menuWithoutOptionsCount[menu_name_line] = menuWithoutOptionsCount[menu_name_line] + 1;
                 } else
                 {
-                    menuWithoutOptionsCount.Add(menu_name, 1);
+                    menuWithoutOptionsCount.Add(menu_name_line, 1);
                 }
             }
 
@@ -232,13 +232,6 @@ namespace yongsuTest
 
                 bool isHot = menu_temp.Equals("핫") ? true : false;
 
-                Console.WriteLine("({0}) {1} ({2})", menu_temp, menu_name, menu_pojang);
-
-                if (menu_tumbler != null)
-                {
-                    Console.WriteLine("    {0}", menu_tumbler);
-                }
-
                 String menu_name_line = "(" + menu_temp + ") " + menu_name + " (" + menu_pojang + ")";
 
                 Dictionary<String, int> options = new Dictionary<string, int>();
@@ -254,20 +247,20 @@ namespace yongsuTest
 
                 var currentMenu = new Menu(menu_name, menu["isTakeOut"].Value<bool>(), isHot, options);
 
-                Console.WriteLine("옵션 수 : " + optionsArray.Count + " / 셋에 포함: " + menuWithoutOptionsAlreadyVisitedSet.Contains(menu_name_line) + " / 텀블러: " + menu_tumbler);
+                // Console.WriteLine("옵션 수 : " + optionsArray.Count + " / 셋에 포함: " + menuWithoutOptionsAlreadyVisitedSet.Contains(menu_name_line) + " / 텀블러: " + menu_tumbler);
                 if (menuWithoutOptionsSet.Contains(menu_name_line) && !hasOption && menuWithoutOptionsAlreadyVisitedSet.Contains(menu_name_line) == false && menu_tumbler == null)
                 {
-                    Console.WriteLine("수량으로 프린트");
+                    // Console.WriteLine("수량으로 프린트");
                     printer.Write(
                       ByteSplicer.Combine(
                         // 메뉴 및 옵션 수에 따라 Loop 돌면서 해야함
                         e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
                         e.PrintLine(menu_name_line),
-                        e.PrintLine("수량: " + menuWithoutOptionsCount[menu_name])
+                        e.PrintLine("수량: " + menuWithoutOptionsCount[menu_name_line])
                     ));
                 } else if (!menuWithoutOptionsSet.Contains(menu_name_line) || menu_tumbler != null || hasOption)
                 {
-                    Console.WriteLine("그냥 프린트");
+                    // Console.WriteLine("그냥 프린트");
                     printer.Write(
                       ByteSplicer.Combine(
                         // 메뉴 및 옵션 수에 따라 Loop 돌면서 해야함
@@ -288,7 +281,7 @@ namespace yongsuTest
                 foreach (var option in optionsArray)
                 {
                     string _option = String.Format("    {0}: {1}", option["name"].ToString(), option["quantity"].ToString());
-                    Console.WriteLine(_option);
+                    // Console.WriteLine(_option);
                     if (option["quantity"].ToString().Equals("0"))
                     {
                         continue;
@@ -311,7 +304,7 @@ namespace yongsuTest
                         );
                 }
 
-                if (menuWithoutOptionsSet.Contains(menu_name_line) && menuWithoutOptionsAlreadyVisitedSet.Contains(menu_name_line) == false && menu_tumbler == null)
+                if (menuWithoutOptionsSet.Contains(menu_name_line) && menuWithoutOptionsAlreadyVisitedSet.Contains(menu_name_line) == false && !hasOption && menu_tumbler == null)
                     menuWithoutOptionsAlreadyVisitedSet.Add(menu_name_line);
             }
 
@@ -325,6 +318,25 @@ namespace yongsuTest
             );
             //프린터 해제
             printer.Dispose();
+        }
+    }
+
+    class TestSerialPrinter
+    {
+        public TestSerialPrinter(string portName, int baudRate)
+        {
+
+        }
+
+        public void Write(byte[] bytes)
+        {
+            var encoding = System.Text.Encoding.GetEncoding("euc-kr");
+            Console.WriteLine(encoding.GetString(bytes));
+        }
+
+        public void Dispose()
+        {
+
         }
     }
 
