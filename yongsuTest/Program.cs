@@ -101,7 +101,7 @@ namespace yongsuTest
 
         static void TcpServerTest()
         {
-            //github test
+            //github test2
             string bindIp = "127.0.0.1";
             const int bindPort = 9292;
             
