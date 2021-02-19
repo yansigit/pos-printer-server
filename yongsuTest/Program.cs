@@ -216,22 +216,24 @@ namespace yongsuTest
                     Console.WriteLine("    {0}", menu_tumbler);
                 }
 
-                if (optionsArray.Count <= 0 && menuWithoutOptionsSet.Contains(menu_name) == false)
+                String menu_name_line = "(" + menu_temp + ") " + menu_name + " (" + menu_pojang + ")";
+
+                if (optionsArray.Count <= 0 && menuWithoutOptionsSet.Contains(menu_name_line) == false)
                 {
                     printer.Write(
                       ByteSplicer.Combine(
                         // 메뉴 및 옵션 수에 따라 Loop 돌면서 해야함
                         e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
-                        e.PrintLine("(" + menu_temp + ") " + menu_name + " (" + menu_pojang + ")" + " X " + menuWithoutOptionsCount[menu_name]))
+                        e.PrintLine(menu_name_line + " X " + menuWithoutOptionsCount[menu_name]))
                     );
-                    menuWithoutOptionsSet.Add(menu_name);
-                } else
+                    menuWithoutOptionsSet.Add(menu_name_line);
+                } else if (optionsArray.Count > 0)
                 {
                     printer.Write(
                       ByteSplicer.Combine(
                         // 메뉴 및 옵션 수에 따라 Loop 돌면서 해야함
                         e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
-                        e.PrintLine("(" + menu_temp + ") " + menu_name + " (" + menu_pojang + ")"))
+                        e.PrintLine(menu_name_line))
                     );
                 }
 
