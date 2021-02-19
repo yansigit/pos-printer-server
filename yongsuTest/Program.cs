@@ -118,8 +118,7 @@ namespace yongsuTest
 
                 while (true)
                 {
-                    //프린터 연결
-                    printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
+                    
 
                     TcpClient client = server.AcceptTcpClient();
                     Console.WriteLine("클라이언트 접속: {0} ", ((IPEndPoint)client.Client.RemoteEndPoint).ToString());
@@ -150,8 +149,7 @@ namespace yongsuTest
                     stream.Close();
                     client.Close();
 
-                    //프린터 해제
-                    printer.Dispose();
+                    
                 }
 
             }
@@ -171,6 +169,9 @@ namespace yongsuTest
         // 파라미터 필요
         static void PrintTest(JObject json)
         {
+            //프린터 연결
+            printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
+
             string orderNum = json["orderNum"].ToString();
             Console.WriteLine(orderNum);
             var e = new CustomEpson();
@@ -247,6 +248,8 @@ namespace yongsuTest
                     e.FullCut()
                 )
             );
+            //프린터 해제
+            printer.Dispose();
         }
     }
 
