@@ -165,14 +165,34 @@ namespace yongsuTest
             // 옵션 없는 메뉴들 수량 체크
             Dictionary<String, int> menuWithoutOptionsCount = new Dictionary<string, int>();
 
+            SortedSet<String> menuWithoutOptionsSet = new SortedSet<String>();
+
             foreach (var menu in json["menus"])
             {
                 var options = menu["options"].ToObject<JArray>();
-                if (options.Count > 0) {
+
+                bool hasOption = false;
+                foreach (var option in options)
+                {
+                    if (option["quantity"].ToObject<int>() > 0)
+                    {
+                        hasOption = true;
+                        break;
+                    }
+                }
+
+                if (hasOption)
+                {
                     continue;
                 }
 
                 var menu_name = menu["name"].ToString();
+                string menu_temp = menu["temp"].ToString(); // 아이스, 핫
+                string menu_pojang = menu["isTakeOut"].Value<bool>() ? "포장" : "테이블";
+
+                String menu_name_line = "(" + menu_temp + ") " + menu_name + " (" + menu_pojang + ")";
+
+                menuWithoutOptionsSet.Add(menu_name_line);
 
                 if (menuWithoutOptionsCount.ContainsKey(menu_name))
                 {
@@ -200,7 +220,8 @@ namespace yongsuTest
                 e.FeedLines(1))
               );
 
-            SortedSet<String> menuWithoutOptionsSet = new SortedSet<string>();
+            SortedSet<String> menuWithoutOptionsAlreadyVisitedSet = new SortedSet<string>();
+            Menu menuBefore;
            foreach (var menu in json["menus"])
             {
                 string menu_pojang = menu["isTakeOut"].Value<bool>() ? "포장" : "테이블";
@@ -208,6 +229,8 @@ namespace yongsuTest
                 string menu_tumbler = menu["isTumbler"].Value<bool>() ? "텀블러" : null;
                 string menu_temp = menu["temp"].ToString(); // 아이스, 핫
                 JArray optionsArray = menu["options"].ToObject<JArray>();
+
+                bool isHot = menu_temp.Equals("핫") ? true : false;
 
                 Console.WriteLine("({0}) {1} ({2})", menu_temp, menu_name, menu_pojang);
 
@@ -218,17 +241,33 @@ namespace yongsuTest
 
                 String menu_name_line = "(" + menu_temp + ") " + menu_name + " (" + menu_pojang + ")";
 
-                if (optionsArray.Count <= 0 && menuWithoutOptionsSet.Contains(menu_name_line) == false)
+                Dictionary<String, int> options = new Dictionary<string, int>();
+                bool hasOption = false;
+                foreach (var option in optionsArray)
                 {
+                    if (option["quantity"].ToObject<int>() > 0)
+                    {
+                        options.Add(option["name"].ToString(), option["quantity"].ToObject<int>());
+                        hasOption = true;
+                    }
+                }
+
+                var currentMenu = new Menu(menu_name, menu["isTakeOut"].Value<bool>(), isHot, options);
+
+                Console.WriteLine("옵션 수 : " + optionsArray.Count + " / 셋에 포함: " + menuWithoutOptionsAlreadyVisitedSet.Contains(menu_name_line) + " / 텀블러: " + menu_tumbler);
+                if (menuWithoutOptionsSet.Contains(menu_name_line) && !hasOption && menuWithoutOptionsAlreadyVisitedSet.Contains(menu_name_line) == false && menu_tumbler == null)
+                {
+                    Console.WriteLine("수량으로 프린트");
                     printer.Write(
                       ByteSplicer.Combine(
                         // 메뉴 및 옵션 수에 따라 Loop 돌면서 해야함
                         e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
-                        e.PrintLine(menu_name_line + " X " + menuWithoutOptionsCount[menu_name]))
-                    );
-                    menuWithoutOptionsSet.Add(menu_name_line);
-                } else if (optionsArray.Count > 0)
+                        e.PrintLine(menu_name_line),
+                        e.PrintLine("수량: " + menuWithoutOptionsCount[menu_name])
+                    ));
+                } else if (!menuWithoutOptionsSet.Contains(menu_name_line) || menu_tumbler != null || hasOption)
                 {
+                    Console.WriteLine("그냥 프린트");
                     printer.Write(
                       ByteSplicer.Combine(
                         // 메뉴 및 옵션 수에 따라 Loop 돌면서 해야함
@@ -262,13 +301,20 @@ namespace yongsuTest
                 );
                 }
 
-                printer.Write(
-                    ByteSplicer.Combine(
-                    e.FeedLines(1)
-                    )
-                    // e.SetStyles(PrintStyle.None),
-                    );
+                if (!menuWithoutOptionsAlreadyVisitedSet.Contains(menu_name_line) || hasOption)
+                {
+                    printer.Write(
+                        ByteSplicer.Combine(
+                        e.FeedLines(1)
+                        )
+                        // e.SetStyles(PrintStyle.None),
+                        );
+                }
+
+                if (menuWithoutOptionsSet.Contains(menu_name_line) && menuWithoutOptionsAlreadyVisitedSet.Contains(menu_name_line) == false && menu_tumbler == null)
+                    menuWithoutOptionsAlreadyVisitedSet.Add(menu_name_line);
             }
+
             printer.Write(
                 ByteSplicer.Combine(e.FeedLines(3)));
 
@@ -279,6 +325,31 @@ namespace yongsuTest
             );
             //프린터 해제
             printer.Dispose();
+        }
+    }
+
+    class Menu
+    {
+        String name;
+        bool pojang;
+        bool isHot;
+        Dictionary<String, int> options = new Dictionary<string, int>();
+
+        public Menu(String name, bool pojang, bool isHot, Dictionary<String, int> options)
+        {
+            this.name = name;
+            this.pojang = pojang;
+            this.isHot = isHot;
+            this.options = options;
+        }
+
+        static bool Compare(Menu menu1, Menu menu2)
+        {
+            if (menu1.name.Equals(menu2.name) && menu1.pojang == menu2.pojang && menu1.isHot == menu2.isHot && menu1.options.Equals(menu2.options))
+            {
+                return true;
+            }
+            return false;
         }
     }
 
