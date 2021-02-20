@@ -14,7 +14,7 @@ namespace yongsuTest
 {
     class Program
     {
-        static TestSerialPrinter printer;
+        static SerialPrinter printer;
         static CustomEpson e;
 
         static void Main(string[] args)
@@ -22,7 +22,7 @@ namespace yongsuTest
             Console.ForegroundColor = ConsoleColor.Yellow;
             WriteLineCenter("※ 창을 닫지 말아주세요. 영업 종료시에만 닫으시면 됩니다. ※");
             e = new CustomEpson();
-            // TestThermalPrinter();
+            TestThermalPrinter();
             Console.ForegroundColor = ConsoleColor.White;
             OpenTcpServer();  
         }
@@ -54,7 +54,6 @@ namespace yongsuTest
 
         static void OpenTcpServer()
         {
-            //github test2
             string bindIp = "127.0.0.1";
             const int bindPort = 9292;
             
@@ -118,7 +117,7 @@ namespace yongsuTest
         static void StartPrint(JObject json)
         {
             //프린터 연결
-            printer = new TestSerialPrinter(portName: "COM1", baudRate: 9600);
+            printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
 
             // 메뉴 해쉬코드 - 내용 딕셔너리
             Dictionary<int, JToken> menuDictionary = new Dictionary<int, JToken>();
