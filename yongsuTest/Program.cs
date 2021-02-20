@@ -3,6 +3,7 @@ using ESCPOS_NET.Emitters;
 using ESCPOS_NET.Utilities;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -88,7 +89,8 @@ namespace yongsuTest
 // }}";
 
         static void Main(string[] args)
-        { 
+        {
+            Console.WriteLine("※ 창을 닫지 말아주세요. 영업 종료시에만 닫으시면 됩니다. ※");
             TcpServerTest();  
         }
 
@@ -108,7 +110,6 @@ namespace yongsuTest
                 server.Start();
 
                 Console.WriteLine("프린터 서버 시작...");
-                Console.WriteLine("창을 닫지 말아주세요. 영업 종료시에만 닫으시면 됩니다.");
 
                 while (true)
                 {
@@ -153,7 +154,6 @@ namespace yongsuTest
             }
 
             Console.WriteLine("서버를 종료합니다.");
-            
         }
 
         // 파라미터 필요
@@ -161,6 +161,27 @@ namespace yongsuTest
         {
             //프린터 연결
             printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
+
+            // 옵션 없는 메뉴들 수량 체크
+            Dictionary<String, int> menuWithoutOptionsCount = new Dictionary<string, int>();
+
+            foreach (var menu in json["menus"])
+            {
+                var options = menu["options"].ToObject<JArray>();
+                if (options.Count > 0) {
+                    continue;
+                }
+
+                var menu_name = menu["name"].ToString();
+
+                if (menuWithoutOptionsCount.ContainsKey(menu_name))
+                {
+                    menuWithoutOptionsCount[menu_name] = menuWithoutOptionsCount[menu_name] + 1;
+                } else
+                {
+                    menuWithoutOptionsCount.Add(menu_name, 1);
+                }
+            }
 
             string orderNum = json["orderNum"].ToString();
             Console.WriteLine(orderNum);
@@ -179,12 +200,14 @@ namespace yongsuTest
                 e.FeedLines(1))
               );
 
+            SortedSet<String> menuWithoutOptionsSet = new SortedSet<string>();
            foreach (var menu in json["menus"])
             {
                 string menu_pojang = menu["isTakeOut"].Value<bool>() ? "포장" : "테이블";
                 string menu_name = menu["name"].ToString();
                 string menu_tumbler = menu["isTumbler"].Value<bool>() ? "텀블러" : null;
                 string menu_temp = menu["temp"].ToString(); // 아이스, 핫
+                JArray optionsArray = menu["options"].ToObject<JArray>();
 
                 Console.WriteLine("({0}) {1} ({2})", menu_temp, menu_name, menu_pojang);
 
@@ -193,20 +216,36 @@ namespace yongsuTest
                     Console.WriteLine("    {0}", menu_tumbler);
                 }
 
-                printer.Write(
-                  ByteSplicer.Combine(
-                    // 메뉴 및 옵션 수에 따라 Loop 돌면서 해야함
-                    e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
-                    e.PrintLine(menu_temp + " " + menu_name + " (" + menu_pojang + ")")));
+                String menu_name_line = "(" + menu_temp + ") " + menu_name + " (" + menu_pojang + ")";
+
+                if (optionsArray.Count <= 0 && menuWithoutOptionsSet.Contains(menu_name_line) == false)
+                {
+                    printer.Write(
+                      ByteSplicer.Combine(
+                        // 메뉴 및 옵션 수에 따라 Loop 돌면서 해야함
+                        e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
+                        e.PrintLine(menu_name_line + " X " + menuWithoutOptionsCount[menu_name]))
+                    );
+                    menuWithoutOptionsSet.Add(menu_name_line);
+                } else if (optionsArray.Count > 0)
+                {
+                    printer.Write(
+                      ByteSplicer.Combine(
+                        // 메뉴 및 옵션 수에 따라 Loop 돌면서 해야함
+                        e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
+                        e.PrintLine(menu_name_line))
+                    );
+                }
+
                 if (menu_tumbler != null) {
                     printer.Write(
                         ByteSplicer.Combine(
                     e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth),
                     e.PrintLine(menu_tumbler)
                     )
-                  );
+                    );
                 }
-                JArray optionsArray = menu["options"].ToObject<JArray>();
+                
                 foreach (var option in optionsArray)
                 {
                     string _option = String.Format("    {0}: {1}", option["name"].ToString(), option["quantity"].ToString());
