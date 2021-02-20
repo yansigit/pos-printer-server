@@ -1,4 +1,4 @@
-﻿namespace yongsuTest
+﻿namespace posPrinterServer
 {
     internal class SortedSet
     {

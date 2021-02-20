@@ -10,7 +10,7 @@ using System.Net.Sockets;
 using System.Text;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 
-namespace yongsuTest
+namespace posPrinterServer
 {
     class Program
     {

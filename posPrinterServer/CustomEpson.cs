@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using ESCPOS_NET.Emitters;
 
-namespace yongsuTest
+namespace posPrinterServer
 {
     class CustomEpson : EPSON
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace yongsuTest
+namespace posPrinterServer
 {
     class TestSerialPrinter
     {
