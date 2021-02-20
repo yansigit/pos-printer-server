@@ -8,17 +8,48 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 
 namespace yongsuTest
 {
     class Program
     {
         static TestSerialPrinter printer;
+        static CustomEpson e;
 
         static void Main(string[] args)
         {
-            Console.WriteLine("※ 창을 닫지 말아주세요. 영업 종료시에만 닫으시면 됩니다. ※");
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            WriteLineCenter("※ 창을 닫지 말아주세요. 영업 종료시에만 닫으시면 됩니다. ※");
+            e = new CustomEpson();
+            // TestThermalPrinter();
+            Console.ForegroundColor = ConsoleColor.White;
             OpenTcpServer();  
+        }
+
+        static void WriteLineCenter(string s)
+        {
+            Console.SetCursorPosition((Console.WindowWidth - s.Length) / 2, Console.CursorTop);
+            Console.WriteLine(s);
+        }
+
+        static void TestThermalPrinter()
+        {
+            try
+            {
+                Console.ForegroundColor = ConsoleColor.White;
+                WriteLineCenter("프린트 연결 테스트..");
+                var test = new SerialPrinter(portName: "COM1", baudRate: 9600);
+                test.Dispose();
+            }
+            catch (Exception e)
+            {
+                Console.BackgroundColor = ConsoleColor.Red;
+                WriteLineCenter("프린트와 연결에 실패했습니다. 프로그램을 종료합니다.");
+                Console.BackgroundColor = ConsoleColor.Black;
+                Console.WriteLine(e.ToString());
+                Environment.Exit(0);
+            }
         }
 
         static void OpenTcpServer()
@@ -120,8 +151,6 @@ namespace yongsuTest
             
             string orderNum = json["orderNum"].ToString();
 
-            var e = new CustomEpson();
-
             printer.Write(
               ByteSplicer.Combine(
                 e.FeedLines(1),
@@ -182,39 +211,6 @@ namespace yongsuTest
             );
             //프린터 해제
             printer.Dispose();
-        }
-    }
-
-    class TestSerialPrinter
-    {
-        public TestSerialPrinter(string portName, int baudRate)
-        {
-
-        }
-
-        public void Write(byte[] bytes)
-        {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            var encoding = System.Text.Encoding.GetEncoding("euc-kr");
-            Console.WriteLine(encoding.GetString(bytes));
-        }
-
-        public void Dispose()
-        {
-
-        }
-    }
-
-    class CustomEpson : EPSON
-    {
-        public override byte[] PrintLine(string line)
-        {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            string text = line;
-            var encoding = System.Text.Encoding.GetEncoding("euc-kr");
-            byte[] bytes = encoding.GetBytes(text);
-            string isoString = Encoding.GetEncoding("ISO-8859-1").GetString(bytes);
-            return base.PrintLine(isoString);
         }
     }
 }
