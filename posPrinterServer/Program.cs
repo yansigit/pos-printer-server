@@ -182,8 +182,8 @@ namespace posPrinterServer
                 if (menu["options"].Any())
                 {
                     menuBytes = ByteSplicer.Combine(menuBytes,
-                        e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth),
-                        e.PrintLine("옵션")
+                        e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth)
+                        // , e.PrintLine("옵션")
                     );
                     JArray optionsArray = menu["options"].ToObject<JArray>();
 
@@ -195,7 +195,7 @@ namespace posPrinterServer
                     }
                 }
 
-                bodyBytes = ByteSplicer.Combine(bodyBytes, menuBytes);
+                bodyBytes = ByteSplicer.Combine(bodyBytes, menuBytes, e.FeedLines(1));
             }
 
             printer.Write(bodyBytes);
