@@ -14,7 +14,7 @@ namespace posPrinterServer
 {
     class Program
     {
-        static SerialPrinter printer;
+        static TestSerialPrinter printer;
         static CustomEpson e;
 
         static void Main(string[] args)
@@ -22,7 +22,7 @@ namespace posPrinterServer
             Console.ForegroundColor = ConsoleColor.Yellow;
             WriteLineCenter("※ 창을 닫지 말아주세요. 영업 종료시에만 닫으시면 됩니다. ※");
             e = new CustomEpson();
-            TestThermalPrinter();
+            // TestThermalPrinter();
             Console.ForegroundColor = ConsoleColor.White;
             OpenTcpServer();  
         }
@@ -92,7 +92,15 @@ namespace posPrinterServer
                     if(data != null)
                     {
                         json = JObject.Parse(data);
-                        StartPrint(json);
+                        Console.WriteLine("액션: " + json["action"].ToString());
+                        if (json["action"].ToString() == "printJungsan")
+                        {
+                            StartPrintJungsan(json);
+                        }
+                        else
+                        {
+                            StartPrint(json);
+                        }
                     }
                     json = null;
                     data = null;
@@ -113,11 +121,36 @@ namespace posPrinterServer
             Console.WriteLine("서버를 종료합니다.");
         }
 
+        static void StartPrintJungsan(JObject json)
+        {
+            printer = new TestSerialPrinter(portName: "COM1", baudRate: 9600);
+
+            printer.Write(
+                ByteSplicer.Combine(
+                        e.CenterAlign(),
+                    e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
+                        e.PrintLine("판매집계표"),
+                        e.SetStyles(PrintStyle.None),
+                        e.PrintLine("---------------"),
+                        e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight),
+                        e.PrintLine(json["date"].ToString()),
+                        e.SetStyles(PrintStyle.None),
+                        e.PrintLine("---------------"),
+                        e.LeftAlign(),
+                        e.PrintLine("구분\t\t건수\t\t금액"),
+                        e.PrintLine("총매출액\t" + json["totalCnt"] + "\t\t" + json["totalPrice"]),
+                        e.PrintLine("텀블러할인\t" + json["discountCnt"] + "\t\t" + json["discountPrice"]),
+                        e.PrintLine("취소\t\t" + json["canceledCnt"] + "\t\t" + json["canceledPrice"]),
+                        e.PrintLine("순매출액\t" + json["sunCnt"] + "\t\t" + json["sunPrice"]),
+                        e.FullCut()
+                    ));
+        }
+
         // 프린트 함수
         static void StartPrint(JObject json)
         {
             //프린터 연결
-            printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
+            printer = new TestSerialPrinter(portName: "COM1", baudRate: 9600);
 
             // 메뉴 해쉬코드 - 내용 딕셔너리
             Dictionary<int, JToken> menuDictionary = new Dictionary<int, JToken>();
