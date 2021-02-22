@@ -14,7 +14,11 @@ namespace posPrinterServer
 {
     class Program
     {
+#if DEBUG
         static TestSerialPrinter printer;
+#else
+        static SerialPrinter printer;
+#endif
         static CustomEpson e;
 
         static void Main(string[] args)
@@ -22,7 +26,9 @@ namespace posPrinterServer
             Console.ForegroundColor = ConsoleColor.Yellow;
             WriteLineCenter("※ 창을 닫지 말아주세요. 영업 종료시에만 닫으시면 됩니다. ※");
             e = new CustomEpson();
-            // TestThermalPrinter();
+#if !DEBUG
+            TestThermalPrinter();
+#endif
             Console.ForegroundColor = ConsoleColor.White;
             OpenTcpServer();  
         }
@@ -123,7 +129,11 @@ namespace posPrinterServer
 
         static void StartPrintJungsan(JObject json)
         {
+#if DEBUG
             printer = new TestSerialPrinter(portName: "COM1", baudRate: 9600);
+#else
+            printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
+#endif
 
             printer.Write(
                 ByteSplicer.Combine(
@@ -150,7 +160,11 @@ namespace posPrinterServer
         static void StartPrint(JObject json)
         {
             //프린터 연결
+#if DEBUG
             printer = new TestSerialPrinter(portName: "COM1", baudRate: 9600);
+#else
+            printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
+#endif
 
             // 메뉴 해쉬코드 - 내용 딕셔너리
             Dictionary<int, JToken> menuDictionary = new Dictionary<int, JToken>();
