@@ -61,7 +61,7 @@ namespace posPrinterServer
         static void OpenTcpServer()
         {
             string bindIp = "127.0.0.1";
-            const int bindPort = 9292;
+            const int bindPort = 13522;
             
             TcpListener server = null;
             try
@@ -98,14 +98,33 @@ namespace posPrinterServer
                     if(data != null)
                     {
                         json = JObject.Parse(data);
-                        Console.WriteLine("액션: " + json["action"].ToString());
-                        if (json["action"].ToString() == "printJungsan")
+                        if (json["action"] == null)
                         {
-                            StartPrintJungsan(json);
+                            try
+                            {
+                                StartPrint(json);
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine(e);
+                                Console.WriteLine("프린트가 사용중입니다. 타 앱에서 프린트를 사용 종료 후 다시 실행하세요.");
+                            }
                         }
                         else
                         {
-                            StartPrint(json);
+                            Console.WriteLine("액션: " + json["action"].ToString());
+                            if (json["action"].ToString() == "printJungsan")
+                            {
+                                try
+                                {
+                                    StartPrintJungsan(json);
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine(e);
+                                    Console.WriteLine("프린트가 사용중입니다. 타 앱에서 프린트를 사용 종료 후 다시 실행하세요.");
+                                }
+                            }
                         }
                     }
                     json = null;
@@ -137,23 +156,32 @@ namespace posPrinterServer
 
             printer.Write(
                 ByteSplicer.Combine(
-                        e.CenterAlign(),
+                    e.CenterAlign(),
                     e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
-                        e.PrintLine("판매집계표"),
-                        e.SetStyles(PrintStyle.None),
-                        e.PrintLine("---------------"),
-                        e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight),
-                        e.PrintLine(json["date"].ToString()),
-                        e.SetStyles(PrintStyle.None),
-                        e.PrintLine("---------------"),
+                    e.PrintLine("판매집계표"),
+                    e.SetStyles(PrintStyle.None),
+                    e.PrintLine("--------------------------"),
+                    e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight),
+                    e.PrintLine(json["date"].ToString()),
+                    e.SetStyles(PrintStyle.None),
+                    e.PrintLine("--------------------------")
+                ));
+            printer.Write(
+                ByteSplicer.Combine(
+                    e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth),
                         e.LeftAlign(),
-                        e.PrintLine("구분\t\t건수\t\t금액"),
-                        e.PrintLine("총매출액\t" + json["totalCnt"] + "\t\t" + json["totalPrice"]),
-                        e.PrintLine("텀블러할인\t" + json["discountCnt"] + "\t\t" + json["discountPrice"]),
-                        e.PrintLine("취소\t\t" + json["canceledCnt"] + "\t\t" + json["canceledPrice"]),
-                        e.PrintLine("순매출액\t" + json["sunCnt"] + "\t\t" + json["sunPrice"]),
+                        e.PrintLine("구분 \t\t 건수 \t\t 금액"),
+                        e.PrintLine("--------------------------"),
+                        e.PrintLine("총매출액 \t\t\t" + json["totalCnt"] + " \t\t " + json["totalPrice"]),
+                        e.PrintLine("텀블러할인 \t\t\t" + json["discountCnt"] + " \t\t " + json["discountPrice"]),
+                        e.PrintLine("취소 \t\t\t" + json["canceledCnt"] + " \t\t " + json["canceledPrice"]),
+                        e.PrintLine("--------------------------"),
+                        e.PrintLine("순매출액 \t\t\t" + json["sunCnt"] + " \t\t " + json["sunPrice"]),
+                        e.FeedLines(3),
                         e.FullCut()
                     ));
+
+            printer.Dispose();
         }
 
         // 프린트 함수
