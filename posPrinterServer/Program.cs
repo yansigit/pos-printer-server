@@ -9,6 +9,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
+using WMPLib;
+using System.Threading;
 
 namespace posPrinterServer
 {
@@ -58,6 +60,15 @@ namespace posPrinterServer
             }
         }
 
+       
+        static void PlayOrderSound()
+        {
+            Console.WriteLine("알람이 울립니다");
+            WMPLib.WindowsMediaPlayer player = new WMPLib.WindowsMediaPlayer();
+            player.URL = @"order_sound.mp3";
+            player.controls.play();
+        }
+
         static void OpenTcpServer()
         {
             string bindIp = "127.0.0.1";
@@ -102,6 +113,8 @@ namespace posPrinterServer
                         {
                             try
                             {
+                                var rTh = new Thread(PlayOrderSound);
+                                rTh.Start();
                                 StartPrint(json);
                             }
                             catch (Exception e)
