@@ -12,6 +12,7 @@
           "ESCPOS_NET": "1.6.0",
           "Newtonsoft.Json": "13.0.1",
           "Interop.WMPLib": "1.0.0.0",
+          "Interop.WMPDXMLib": "1.0.0.0",
           "runtimepack.Microsoft.NETCore.App.Runtime.win-x86": "3.1.13"
         },
         "runtime": {
@@ -925,6 +926,14 @@
             "fileVersion": "1.0.0.0"
           }
         }
+      },
+      "Interop.WMPDXMLib/1.0.0.0": {
+        "runtime": {
+          "Interop.WMPDXMLib.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
       }
     }
   },
@@ -1031,6 +1040,11 @@
       "hashPath": "system.security.principal.windows.4.6.0.nupkg.sha512"
     },
     "Interop.WMPLib/1.0.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Interop.WMPDXMLib/1.0.0.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
