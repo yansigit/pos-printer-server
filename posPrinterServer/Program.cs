@@ -11,6 +11,30 @@ using System.Text;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using WMPLib;
 using System.Threading;
+///////////////////////////////////////////////////
+//       영수증 재출력용 JSON                        // 
+//                                               //
+//{                                              //
+//    action : "reprint",                        //
+//    totalPrice : 모든 메뉴 총가격,                 //
+//    approvalDate : 승인일자,                     //
+//    approvalNum : 승인번호,                      //
+//    cardName : 카드이름,                         //
+//    cardNum : 카드번호,                          //
+//    acqName : 매입사명,                          //
+//    menus : {                                 //
+//              {                               // 
+//                  name : 음료명,                //
+//                  totalPrice: 옵션을 합한 가격,   //
+//                  quantity : 수량              //
+//              }                               //
+//            },                                //
+//            ...                               //
+//                                              //
+//}                                             //
+//////////////////////////////////////////////////
+
+
 
 namespace posPrinterServer
 {
@@ -138,8 +162,21 @@ namespace posPrinterServer
                                     Console.WriteLine("프린트가 사용중입니다. 타 앱에서 프린트를 사용 종료 후 다시 실행하세요.");
                                 }
                             }
+                            //Todo
+                            if (json["action"].ToString() == "rePrint")
+                            {
+                                //여기 구현해 주십시오..
+                                try
+                                {
+                                    reprintBill(json);
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine(e);
+                                    Console.WriteLine("프린트가 사용중입니다. 타 앱에서 프린트를 사용 종료 후 다시 시도해주세요.");
+                                }
+                            }
                         }
-                    }
                     json = null;
                     data = null;
                     stream.Close();
@@ -299,5 +336,136 @@ namespace posPrinterServer
             //프린터 해제
             printer.Dispose();
         }
+
+        static void reprintBill(JObject json)
+        {
+            //프린터 연결
+#if DEBUG
+            printer = new TestSerialPrinter(portName: "COM1", baudRate: 9600);
+#else
+            printer = new SerialPrinter(portName: "COM1", baudRate: 9600);
+#endif
+///////////////////////////////////////////////////
+//       영수증 재출력용 JSON                        // 
+//                                               //
+//{                                              //
+//    action : "reprint",                        //
+//    totalPrice : 모든 메뉴 총가격,                 //
+//    approvalDate : 승인일자,                     //
+//    approvalNum : 승인번호,                      //
+//    cardName : 카드이름,                         //
+//    cardNum : 카드번호,                          //
+//    acqName : 매입사명,                          //
+//    menus : {                                 //
+//              {                               // 
+//                  name : 음료명,                //
+//                  totalPrice: 옵션을 합한 가격,   //
+//                  quantity : 수량              //
+//              }                               //
+//            },                                //
+//            ...                               //
+//                                              //
+//}                                             //
+//////////////////////////////////////////////////
+            // 메뉴 해쉬코드 - 내용 딕셔너리
+            Dictionary<int, JToken> menuDictionary = new Dictionary<int, JToken>();
+
+            // 각 메뉴마다 수량 겟하고 내용 저장
+            foreach (var menu in json["menus"])
+            {
+                int menuHash = menu.ToString().GetHashCode();
+
+                if (menuDictionary.ContainsKey(menuHash)){
+                    menuDictionary[menuHash]["quantity"] = menuDictionary[menuHash]["quantity"].ToObject<int>() + 1;
+                }
+                else
+                {
+                    menu["quantity"] = 1;
+                    menuDictionary.Add(menuHash, menu);
+                }
+            }
+
+            string orderNum = json["orderNum"].ToString();
+
+            printer.Write(
+              ByteSplicer.Combine(
+                e.FeedLines(1),
+                e.CenterAlign(),
+                e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
+                e.PrintLine("주문번호: " + orderNum),
+                e.FeedLines(1),
+                e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight),
+                e.PrintLine("11호관 커피"),
+                e.SetStyles(PrintStyle.None),
+                e.PrintLine("울산시 남구 대학로 93 11호관 305호"),
+                e.PrintLine("TEL. 052-220-5757"),
+                e.FeedLines(1),
+                e.SetStyles(PrintStyle.DoubleWidth),
+                e.PrintLine("--------------------------"),
+                e.SetStyles(PrintStyle.None),
+                e.LeftAlign(),
+                e.PrintLine("  메뉴\t\t\t수량\t가격"),
+                e.CenterAlign(),
+                e.SetStyles(PrintStyle.DoubleWidth),
+                e.PrintLine("--------------------------")
+              ));
+
+            byte[] bodyBytes = e.FeedLines(1);
+
+            foreach (var menu in menuDictionary.Values)
+            {
+                string menu_name = menu["name"].ToString();
+                int menu_quantity = menu["quantity"].ToObject<int>();
+                int menu_totalPrice = menu["totalPrice"].ToObject<int>();
+            }
+
+            foreach (var menu in menuDictionary.Values)
+            {
+                byte[] menuBytes = ByteSplicer.Combine(
+                    e.SetStyles(PrintStyle.FontB | PrintStyle.Bold),
+                    e.PrintLine("  "+menu_name_line+"\t\t\t"+menu_quantity+"\t"+menu_totalPrice),
+                );
+                bodyBytes = ByteSplicer.Combine(bodyBytes, menuBytes, e.FeedLines(1));
+            }
+
+            printer.Write(bodyBytes);
+            printer.Write(ByteSplicer.Combine(
+                e.CenterAlign(),
+                e.SetStyles(PrintStyle.DoubleWidth),
+                e.PrintLine("--------------------------"),
+                e.FeedLines(1),
+                e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight),
+                e.PrintLine("신용카드 승인 정보"),
+                e.SetStyles(PrintStyle.None),
+                e.PrintLine("카드명 : "+json["cardName"].ToString()),
+                e.PrintLine("카드번호 : "+json["cardNum"].ToObject<int>()+"**********"),
+                e.PrintLine("매입사 : "+json["acqName"].ToString()),
+                e.FeedLines(1),
+                e.PrintLine("사 업 자 : 691-85-00176 엄문호"),
+                e.PrintLine("가맹정명 : 11호관 커피숍"),
+                e.PrintLine("가맹번호 : 157431024"),
+                e.PrintLine("승인일시 : "+json["approvalDate"]),
+                e.PrintLine("승인번호 : "+json["approvalNum"]),
+                e.PrintLine("승인금 : "+json["totalPrice"]),
+                e.SetStyles(PrintStyle.DoubleWidth),
+                e.PrintLine("--------------------------"),
+                e.FeedLines(1),
+                e.SetStyles(PrintStyle.None),
+                e.PrintLine("저희 11호관 커피를 이용해주셔서 감사합니다.")
+            ));
+            
+            printer.Write(
+                ByteSplicer.Combine(e.FeedLines(3)));
+
+            printer.Write(
+                ByteSplicer.Combine(
+                    e.FullCut()
+                )
+            );
+            //프린터 해제
+            printer.Dispose();
+        }
+        }
     }
 }
+
