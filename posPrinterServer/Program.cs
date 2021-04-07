@@ -222,15 +222,20 @@ namespace posPrinterServer
 #endif
 
             // 메뉴 해쉬코드 - 내용 딕셔너리
-            Dictionary<int, JToken> menuDictionary = new Dictionary<int, JToken>();
+            Dictionary<string, JToken> menuDictionary = new Dictionary<string, JToken>();
+            Dictionary<string, int> menuPriceTable = new Dictionary<string, int>();
 
             // 각 메뉴마다 수량 겟하고 내용 저장
             foreach (var menu in json["menus"])
             {
-                int menuHash = menu.ToString().GetHashCode();
+                string menuName = menu["name"].ToString();
+                int menuPrice = menu["totalPrice"].ToObject<int>();
 
-                if (menuDictionary.ContainsKey(menuHash))
-                    menuDictionary[menuHash]["quantity"] = menuDictionary[menuHash]["quantity"].ToObject<int>() + 1;
+                if (menuDictionary.ContainsKey(menuName))
+                {
+                    menuDictionary[menuName]["quantity"] = menuDictionary[menuName]["quantity"].ToObject<int>() + 1;
+                    menuPriceTable[menuName] += menuPrice;
+                }
                 else
                 {
                     menu["quantity"] = 1;
@@ -246,7 +251,8 @@ namespace posPrinterServer
                             currentOption.Remove();
                     }
 
-                    menuDictionary.Add(menuHash, menu);
+                    menuDictionary.Add(menuName, menu);
+                    menuPriceTable.Add(menuName, menuPrice);
                 }
             }
 
@@ -259,10 +265,14 @@ namespace posPrinterServer
                 e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
                 e.PrintLine("주문번호: " + orderNum),
                 e.SetStyles(PrintStyle.None),
-                e.PrintLine("--------------------------"),
+                e.PrintLine("----------------------------------------------------"),
                 e.PrintLine("11호관 커피숍"),
+                e.PrintLine("울산시 남구 대학로 93 11호관 305호"),
+                e.PrintLine("TEL.052-220-5757"),
                 e.PrintLine(System.DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss")),//시간
-                e.PrintLine("--------------------------")
+                e.PrintLine("----------------------------------------------------"),
+                e.PrintLine("메뉴\t\t\t\t\t수량\t\t가격"),
+                e.PrintLine("----------------------------------------------------")
               ));
 
             byte[] bodyBytes = e.FeedLines(1);
@@ -273,14 +283,14 @@ namespace posPrinterServer
                 string menu_tumbler = menu["isTumbler"].Value<bool>() ? "텀블러" : null;
                 string menu_temp = menu["temp"].ToString(); // 아이스, 핫
                 int menu_quantity = menu["quantity"].ToObject<int>();
+                string menu_price =  menu["totalPrice"].ToString();
 
                 // (온도) 메뉴이름 (포장여부)
                 string menu_name_line = "(" + menu_temp + ") " + menu_name + " (" + menu_pojang + ")";
 
                 byte[] menuBytes = ByteSplicer.Combine(
                     e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
-                    e.PrintLine(menu_name_line),
-                    e.PrintLine("수량 : " + menu_quantity)
+                    e.PrintLine(menu_name_line + "\t" + menu_quantity + "\t\t" + menuPriceTable[menu_name])
                 );
                 if (menu["options"].Any())
                 {
@@ -302,6 +312,39 @@ namespace posPrinterServer
             }
 
             printer.Write(bodyBytes);
+
+            string orderPrice = json["totalPrice"].ToString();
+            int supplyPrice = (int)(json["totalPrice"].ToObject<int>() / 1.1);
+            int tax = json["totalPrice"].ToObject<int>() - supplyPrice;
+
+            printer.Write(ByteSplicer.Combine(
+                e.FeedLines(1),
+                e.RightAlign(),
+                e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
+                e.PrintLine("합계금액: " + orderPrice),
+                e.PrintLine("공급가액: " + supplyPrice),
+                e.PrintLine("부가세: " + tax)
+              ));
+
+            printer.Write(ByteSplicer.Combine(
+                e.FeedLines(1),
+                e.CenterAlign(),
+                e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
+                e.PrintLine("신용카드 승인 정보"),
+                e.SetStyles(PrintStyle.None),
+                e.PrintLine("카드명: " + json["cardCompany"].ToString()),
+                e.PrintLine("카드번호: " + json["cardNumber"].ToString()),
+                e.PrintLine("매입사명: " + json["aqCompany"].ToString() + "**********"),
+                e.FeedLines(1),
+                e.PrintLine("사업자: 691-85-00176 엄문호"),
+                e.PrintLine("가맹점명: 11호관 커피숍"),
+                e.PrintLine("가맹번호: 157431024"),
+                e.PrintLine("승인일시: " + json["ApprovalDate"].ToString()),
+                e.PrintLine("승인번호: " + json["ApprovalNumber"].ToString()),
+                e.PrintLine("승인금: " + orderPrice),
+                e.PrintLine("----------------------------------------------------"),
+                e.PrintLine("11호관 카페 이용에 감사드립니다")
+              ));
 
             printer.Write(
                 ByteSplicer.Combine(e.FeedLines(3)));
