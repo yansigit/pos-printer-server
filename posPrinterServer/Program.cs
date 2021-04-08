@@ -264,12 +264,11 @@ namespace posPrinterServer
                 e.CenterAlign(),
                 e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
                 e.PrintLine("주문번호: " + orderNum),
-                e.SetStyles(PrintStyle.None),
+                e.SetStyles(PrintStyle.FontB),
                 e.PrintLine("----------------------------------------------------"),
                 e.PrintLine("11호관 커피숍"),
                 e.PrintLine("울산시 남구 대학로 93 11호관 305호"),
                 e.PrintLine("TEL.052-220-5757"),
-                e.PrintLine(System.DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss")),//시간
                 e.PrintLine("----------------------------------------------------"),
                 e.PrintLine("메뉴\t\t\t\t\t수량\t\t가격"),
                 e.PrintLine("----------------------------------------------------")
@@ -278,36 +277,16 @@ namespace posPrinterServer
             byte[] bodyBytes = e.FeedLines(1);
             foreach (var menu in menuDictionary.Values)
             {
-                string menu_pojang = menu["isTakeOut"].Value<bool>() ? "포장" : "테이블";
-                string menu_name = menu["name"].ToString();
-                string menu_tumbler = menu["isTumbler"].Value<bool>() ? "텀블러" : null;
-                string menu_temp = menu["temp"].ToString(); // 아이스, 핫
                 int menu_quantity = menu["quantity"].ToObject<int>();
                 string menu_price =  menu["totalPrice"].ToString();
 
                 // (온도) 메뉴이름 (포장여부)
-                string menu_name_line = "(" + menu_temp + ") " + menu_name + " (" + menu_pojang + ")";
+                string menu_name_line = menu_name;
 
                 byte[] menuBytes = ByteSplicer.Combine(
                     e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
-                    e.PrintLine(menu_name_line + "\t" + menu_quantity + "\t\t" + menuPriceTable[menu_name])
+                    e.PrintLine(menu_name_line + "\t\t\t\t" + menu_quantity + "\t\t" + menuPriceTable[menu_name])
                 );
-                if (menu["options"].Any())
-                {
-                    menuBytes = ByteSplicer.Combine(menuBytes,
-                        e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth)
-                    // , e.PrintLine("옵션")
-                    );
-                    JArray optionsArray = menu["options"].ToObject<JArray>();
-
-                    foreach (var option in optionsArray)
-                    {
-                        menuBytes = ByteSplicer.Combine(menuBytes,
-                            e.PrintLine(option["name"].ToString() + " : " + option["quantity"].ToString())
-                        );
-                    }
-                }
-
                 bodyBytes = ByteSplicer.Combine(bodyBytes, menuBytes, e.FeedLines(1));
             }
 
@@ -321,17 +300,19 @@ namespace posPrinterServer
                 e.FeedLines(1),
                 e.RightAlign(),
                 e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
-                e.PrintLine("합계금액: " + orderPrice),
-                e.PrintLine("공급가액: " + supplyPrice),
-                e.PrintLine("부가세: " + tax)
+                e.PrintLine("합계금액 : " + orderPrice + "원"),
+                e.PrintLine("공급가액 : " + supplyPrice + "원"),
+                e.PrintLine("부가세 : " + tax + "원"),
+                e.LeftAlign(),
+                e.PrintLine("----------------------------------------------------")
               ));
 
             printer.Write(ByteSplicer.Combine(
                 e.FeedLines(1),
                 e.CenterAlign(),
-                e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight | PrintStyle.DoubleWidth | PrintStyle.Bold),
+                e.SetStyles(PrintStyle.FontB | PrintStyle.DoubleHeight),
                 e.PrintLine("신용카드 승인 정보"),
-                e.SetStyles(PrintStyle.None),
+                e.SetStyles(PrintStyle.FontB),
                 e.PrintLine("카드명: " + json["cardCompany"].ToString()),
                 e.PrintLine("카드번호: " + json["cardNumber"].ToString()),
                 e.PrintLine("매입사명: " + json["aqCompany"].ToString() + "**********"),
@@ -341,9 +322,9 @@ namespace posPrinterServer
                 e.PrintLine("가맹번호: 157431024"),
                 e.PrintLine("승인일시: " + json["ApprovalDate"].ToString()),
                 e.PrintLine("승인번호: " + json["ApprovalNumber"].ToString()),
-                e.PrintLine("승인금: " + orderPrice),
+                e.PrintLine("승인금액: " + orderPrice + "원"),
                 e.PrintLine("----------------------------------------------------"),
-                e.PrintLine("11호관 카페 이용에 감사드립니다")
+                e.PrintLine("11호관 카페를 이용해주셔서 감사합니다.")
               ));
 
             printer.Write(
