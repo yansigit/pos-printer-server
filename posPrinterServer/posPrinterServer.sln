@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31005.135
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "posPrinterServer", "posPrinterServer\posPrinterServer.csproj", "{EF6A1620-032F-4AE4-BC18-650453B8A9C7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "posPrinterServer", "posPrinterServer.csproj", "{1567FD2A-9B1C-4DEA-9D8C-13CDF9762FAC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{EF6A1620-032F-4AE4-BC18-650453B8A9C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EF6A1620-032F-4AE4-BC18-650453B8A9C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EF6A1620-032F-4AE4-BC18-650453B8A9C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EF6A1620-032F-4AE4-BC18-650453B8A9C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1567FD2A-9B1C-4DEA-9D8C-13CDF9762FAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1567FD2A-9B1C-4DEA-9D8C-13CDF9762FAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1567FD2A-9B1C-4DEA-9D8C-13CDF9762FAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1567FD2A-9B1C-4DEA-9D8C-13CDF9762FAC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {3A21BFDA-5FC7-45AD-B69E-AEBA0B055370}
+		SolutionGuid = {11559C9E-9387-482A-B2CE-FF4FE8264BDF}
 	EndGlobalSection
 EndGlobal
