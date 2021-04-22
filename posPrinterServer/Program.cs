@@ -322,6 +322,7 @@ namespace posPrinterServer
             {
                 int menu_quantity = menu["quantity"].ToObject<int>();
                 string menu_price =  menu["totalPrice"].ToString();
+                string menu_name = menu["name"].ToString();
 
                 // (온도) 메뉴이름 (포장여부)
                 string menu_name_line = menu_name;
