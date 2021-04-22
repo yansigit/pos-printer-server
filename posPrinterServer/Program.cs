@@ -95,7 +95,6 @@ namespace posPrinterServer
             // Open the file to read from.
             using (StreamReader sr = File.OpenText(path))
             {
-                string s;
                 try
                 {
                     settings = JObject.Parse(sr.ReadToEnd());
