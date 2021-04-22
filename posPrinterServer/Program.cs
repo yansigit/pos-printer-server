@@ -11,6 +11,7 @@ using System.Text;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using WMPLib;
 using System.Threading;
+using System.IO;
 
 namespace posPrinterServer
 {
@@ -25,6 +26,8 @@ namespace posPrinterServer
 
         static void Main(string[] args)
         {
+            PlayOrderSound();
+
             Console.ForegroundColor = ConsoleColor.Yellow;
             WriteLineCenter("※ 창을 닫지 말아주세요. 영업 종료시에만 닫으시면 됩니다. ※");
             e = new CustomEpson();
@@ -66,7 +69,47 @@ namespace posPrinterServer
             Console.WriteLine("알람이 울립니다");
             WMPLib.WindowsMediaPlayer player = new WMPLib.WindowsMediaPlayer();
             player.URL = @"order_sound.mp3";
+
+            var settings = ReadSettingFile();
+            Console.WriteLine("볼륨: " + settings.Value<string>("volume"));
+            
+            player.settings.volume = settings.Value<int>("volume");
             player.controls.play();
+        }
+
+        static JObject ReadSettingFile()
+        {
+            string path = @"settings.json";
+            if (!File.Exists(path))
+            {
+                // Create a file to write to.
+                using (StreamWriter sw = File.CreateText(path))
+                {
+                    sw.WriteLine("{");
+                    sw.WriteLine("volume: 70");
+                    sw.WriteLine("}");
+                }
+            }
+
+            JObject settings = null;
+            // Open the file to read from.
+            using (StreamReader sr = File.OpenText(path))
+            {
+                string s;
+                try
+                {
+                    settings = JObject.Parse(sr.ReadToEnd());
+                } catch
+                {
+                    Console.BackgroundColor = ConsoleColor.Red;
+                    WriteLineCenter("설정 파일을 읽는데 실패했습니다. 프로그램을 종료합니다.");
+                    Console.BackgroundColor = ConsoleColor.Black;
+                    Console.WriteLine(e.ToString());
+                    Environment.Exit(0);
+                }
+            }
+
+            return settings;
         }
 
         static void OpenTcpServer()
